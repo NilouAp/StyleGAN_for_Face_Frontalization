@@ -59,3 +59,14 @@ class BaseNet(nn.Module):
             if len(output) == len(self.target_layers):
                 break
         return output
+
+
+class SqueezeNet(BaseNet):
+    def __init__(self):
+        super(SqueezeNet, self).__init__()
+
+        self.layers = models.squeezenet1_1(True).features
+        self.target_layers = [2, 5, 8, 10, 11, 12, 13]
+        self.n_channels_list = [64, 128, 256, 384, 384, 512, 512]
+
+        self.set_requires_grad(False)
