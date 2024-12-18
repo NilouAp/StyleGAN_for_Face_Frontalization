@@ -241,4 +241,50 @@ class Coach:
 		loss_dict['loss'] = float(loss)
 		return loss, loss_dict, id_logs
 
+	def log_metrics(self, metrics_dict, prefix):
+		for key, value in metrics_dict.items():
+			self.logger.add_scalar(f'{prefix}/{key}', value, self.global_step)
+		if self.opts.use_wandb:
+			self.wb_logger.log(prefix, metrics_dict, self.global_step)
 
+	def print_metrics(self, metrics_dict, prefix):
+		print(f'Metrics for {prefix}, step {self.global_step}')
+		for key, value in metrics_dict.items():
+			print(f'\t{key} = ', value)
+
+	def parse_and_log_images(self, id_logs, x, y, y_hat, title, subscript=None, display_count=2):
+		im_data = []
+		for i in range(display_count):
+			cur_im_data = {
+				'input_face': common.log_input_image(x[i], self.opts),
+				'target_face': common.tensor2im(y[i]),
+				'output_face': common.tensor2im(y_hat[i]),
+			}
+			if id_logs is not None:
+				for key in id_logs[i]:
+					cur_im_data[key] = id_logs[i][key]
+			im_data.append(cur_im_data)
+		self.log_images(title, im_data=im_data, subscript=subscript)
+
+	def log_images(self, name, im_data, subscript=None, log_latest=False):
+		fig = common.vis_faces(im_data)
+		step = self.global_step
+		if log_latest:
+			step = 0
+		if subscript:
+			path = os.path.join(self.logger.log_dir, name, f'{subscript}_{step:04d}.jpg')
+		else:
+			path = os.path.join(self.logger.log_dir, name, f'{step:04d}.jpg')
+		os.makedirs(os.path.dirname(path), exist_ok=True)
+		fig.savefig(path)
+		plt.close(fig)
+
+	def __get_save_dict(self):
+		save_dict = {
+			'state_dict': self.net.state_dict(),
+			'opts': vars(self.opts)
+		}
+		# save the latent avg in state_dict for inference if truncation of w was used during training
+		if self.opts.start_from_latent_avg:
+			save_dict['latent_avg'] = self.net.latent_avg
+		return save_dict
