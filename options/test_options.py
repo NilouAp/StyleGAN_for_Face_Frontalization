@@ -10,7 +10,7 @@ class TestOptions:
 	def initialize(self):
 		# arguments for inference script
 		self.parser.add_argument('--exp_dir', type=str, default = '../outputs',help='Path to experiment output directory')
-		self.parser.add_argument('--checkpoint_path', default='../pretrained_models/psp_ffhq_frontalization.pt', type=str, help='Path to pSp model checkpoint')
+		self.parser.add_argument('--checkpoint_path', default='../pretrained_models/frontalization.pt', type=str, help='Path to pSp model checkpoint')
 		self.parser.add_argument('--data_path', type=str, default='../inference_samples/', help='Path to directory of images to evaluate')
 		# self.parser.add_argument('--data_path', type=str, default='gt_images', help='Path to directory of images to evaluate')
 		self.parser.add_argument('--couple_outputs', default=True, help='Whether to also save inputs + outputs side-by-side')
