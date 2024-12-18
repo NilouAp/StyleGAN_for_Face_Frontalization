@@ -34,3 +34,10 @@ class MocoLoss(nn.Module):
         # remove output layer
         model = nn.Sequential(*list(model.children())[:-1]).cuda()
         return model
+
+    def extract_feats(self, x):
+        x = F.interpolate(x, size=224)
+        x_feats = self.model(x)
+        x_feats = nn.functional.normalize(x_feats, dim=1)
+        x_feats = x_feats.squeeze()
+        return x_feats
