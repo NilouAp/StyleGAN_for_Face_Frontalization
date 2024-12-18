@@ -80,3 +80,13 @@ class AlexNet(BaseNet):
         self.n_channels_list = [64, 192, 384, 256, 256]
 
         self.set_requires_grad(False)
+
+class VGG16(BaseNet):
+    def __init__(self):
+        super(VGG16, self).__init__()
+
+        self.layers = models.vgg16(True).features
+        self.target_layers = [4, 9, 16, 23, 30]
+        self.n_channels_list = [64, 128, 256, 512, 512]
+
+        self.set_requires_grad(False)
