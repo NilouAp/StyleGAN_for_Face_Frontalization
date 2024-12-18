@@ -13,6 +13,7 @@ from options.train_options import TrainOptions
 from training.coach import Coach
 
 
+
 def main():
 	opts = TrainOptions().parse()
 	if os.path.exists(opts.exp_dir):
@@ -30,3 +31,5 @@ def main():
 
 if __name__ == '__main__':
 	main()
+
+
