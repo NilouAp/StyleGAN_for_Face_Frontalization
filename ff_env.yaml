@@ -34,3 +34,4 @@ dependencies:
     - torch==1.6.0
     - torchvision==0.4.2
 prefix: ~/anaconda3/envs/ff_env
+
