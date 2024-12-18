@@ -10,7 +10,9 @@ Face Frontalization Results on CMU Multi-PIE Face Dataset
 
 ## Project Overview
 This project addresses the challenge of facial identity preservation during face frontalization, leveraging the capabilities of **StyleGAN**. By generating front-facing views from non-frontal facial images while maintaining accurate identity features, this project is particularly beneficial for facial recognition systems, where frontal images yield optimal performance.
-Our model is trained using the **CMU Multi-PIE Face Dataset**, which features paired frontal and non-frontal images. 
+
+The model was trained using the CMU Multi-PIE Face Dataset, which features paired frontal and non-frontal images. Robust data preparation scripts for the CMU Multi-PIE dataset are included in the project.
+
 ---
 
 ## Dataset
