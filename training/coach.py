@@ -157,4 +157,88 @@ class Coach:
 		self.net.train()
 		return loss_dict
 
+	def checkpoint_me(self, loss_dict, is_best):
+		save_name = 'best_model.pt' if is_best else f'iteration_{self.global_step}.pt'
+		save_dict = self.__get_save_dict()
+		checkpoint_path = os.path.join(self.checkpoint_dir, save_name)
+		torch.save(save_dict, checkpoint_path)
+		with open(os.path.join(self.checkpoint_dir, 'timestamp.txt'), 'a') as f:
+			if is_best:
+				f.write(f'**Best**: Step - {self.global_step}, Loss - {self.best_val_loss} \n{loss_dict}\n')
+				if self.opts.use_wandb:
+					self.wb_logger.log_best_model()
+			else:
+				f.write(f'Step - {self.global_step}, \n{loss_dict}\n')
+
+	def configure_optimizers(self):
+		params = list(self.net.encoder.parameters())
+		if self.opts.train_decoder:
+			params += list(self.net.decoder.parameters())
+		if self.opts.optim_name == 'adam':
+			optimizer = torch.optim.Adam(params, lr=self.opts.learning_rate)
+		else:
+			optimizer = Ranger(params, lr=self.opts.learning_rate)
+		return optimizer
+
+	def configure_datasets(self):
+		if self.opts.dataset_type not in data_configs.DATASETS.keys():
+			Exception(f'{self.opts.dataset_type} is not a valid dataset_type')
+		print(f'Loading dataset for {self.opts.dataset_type}')
+		dataset_args = data_configs.DATASETS[self.opts.dataset_type]
+		transforms_dict = dataset_args['transforms'](self.opts).get_transforms()
+		train_dataset = ImagesDataset(source_root=dataset_args['train_source_root'],
+									  target_root=dataset_args['train_target_root'],
+									  source_transform=transforms_dict['transform_source'],
+									  target_transform=transforms_dict['transform_gt_train'],
+									  opts=self.opts)
+		test_dataset = ImagesDataset(source_root=dataset_args['test_source_root'],
+									 target_root=dataset_args['test_target_root'],
+									 source_transform=transforms_dict['transform_source'],
+									 target_transform=transforms_dict['transform_test'],
+									 opts=self.opts)
+		if self.opts.use_wandb:
+			self.wb_logger.log_dataset_wandb(train_dataset, dataset_name="Train")
+			self.wb_logger.log_dataset_wandb(test_dataset, dataset_name="Test")
+		print(f"Number of training samples: {len(train_dataset)}")
+		print(f"Number of test samples: {len(test_dataset)}")
+		return train_dataset, test_dataset
+
+	def calc_loss(self, x, y, y_hat, latent):
+		loss_dict = {}
+		loss = 0.0
+		id_logs = None
+		if self.opts.id_lambda > 0:
+			loss_id, sim_improvement, id_logs = self.id_loss(y_hat, y, x)
+			loss_dict['loss_id'] = float(loss_id)
+			loss_dict['id_improve'] = float(sim_improvement)
+			loss = loss_id * self.opts.id_lambda
+		if self.opts.l2_lambda > 0:
+			loss_l2 = F.mse_loss(y_hat, y)
+			loss_dict['loss_l2'] = float(loss_l2)
+			loss += loss_l2 * self.opts.l2_lambda
+		if self.opts.lpips_lambda > 0:
+			loss_lpips = self.lpips_loss(y_hat, y)
+			loss_dict['loss_lpips'] = float(loss_lpips)
+			loss += loss_lpips * self.opts.lpips_lambda
+		if self.opts.lpips_lambda_crop > 0:
+			loss_lpips_crop = self.lpips_loss(y_hat[:, :, 35:223, 32:220], y[:, :, 35:223, 32:220])
+			loss_dict['loss_lpips_crop'] = float(loss_lpips_crop)
+			loss += loss_lpips_crop * self.opts.lpips_lambda_crop
+		if self.opts.l2_lambda_crop > 0:
+			loss_l2_crop = F.mse_loss(y_hat[:, :, 35:223, 32:220], y[:, :, 35:223, 32:220])
+			loss_dict['loss_l2_crop'] = float(loss_l2_crop)
+			loss += loss_l2_crop * self.opts.l2_lambda_crop
+		if self.opts.w_norm_lambda > 0:
+			loss_w_norm = self.w_norm_loss(latent, self.net.latent_avg)
+			loss_dict['loss_w_norm'] = float(loss_w_norm)
+			loss += loss_w_norm * self.opts.w_norm_lambda
+		if self.opts.moco_lambda > 0:
+			loss_moco, sim_improvement, id_logs = self.moco_loss(y_hat, y, x)
+			loss_dict['loss_moco'] = float(loss_moco)
+			loss_dict['id_improve'] = float(sim_improvement)
+			loss += loss_moco * self.opts.moco_lambda
+
+		loss_dict['loss'] = float(loss)
+		return loss, loss_dict, id_logs
+
 
