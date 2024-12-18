@@ -42,6 +42,7 @@ class MocoLoss(nn.Module):
         x_feats = x_feats.squeeze()
         return x_feats
 
+
     def forward(self, y_hat, y, x):
         n_samples = x.shape[0]
         x_feats = self.extract_feats(x)
