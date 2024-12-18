@@ -124,4 +124,37 @@ class Coach:
 
 				self.global_step += 1
 
+	def validate(self):
+		self.net.eval()
+		agg_loss_dict = []
+		for batch_idx, batch in enumerate(self.test_dataloader):
+			x, y = batch
+
+			with torch.no_grad():
+				x, y = x.to(self.device).float(), y.to(self.device).float()
+				y_hat, latent = self.net.forward(x, return_latents=True)
+				loss, cur_loss_dict, id_logs = self.calc_loss(x, y, y_hat, latent)
+			agg_loss_dict.append(cur_loss_dict)
+
+			# Logging related
+			self.parse_and_log_images(id_logs, x, y, y_hat,
+									  title='images/test/faces',
+									  subscript='{:04d}'.format(batch_idx))
+
+			# Log images of first batch to wandb
+			if self.opts.use_wandb and batch_idx == 0:
+				self.wb_logger.log_images_to_wandb(x, y, y_hat, id_logs, prefix="test", step=self.global_step, opts=self.opts)
+
+			# For first step just do sanity test on small amount of data
+			if self.global_step == 0 and batch_idx >= 4:
+				self.net.train()
+				return None  # Do not log, inaccurate in first batch
+
+		loss_dict = train_utils.aggregate_loss_dict(agg_loss_dict)
+		self.log_metrics(loss_dict, prefix='test')
+		self.print_metrics(loss_dict, prefix='test')
+
+		self.net.train()
+		return loss_dict
+
 
