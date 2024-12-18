@@ -41,3 +41,27 @@ class MocoLoss(nn.Module):
         x_feats = nn.functional.normalize(x_feats, dim=1)
         x_feats = x_feats.squeeze()
         return x_feats
+
+    def forward(self, y_hat, y, x):
+        n_samples = x.shape[0]
+        x_feats = self.extract_feats(x)
+        y_feats = self.extract_feats(y)
+        y_hat_feats = self.extract_feats(y_hat)
+        y_feats = y_feats.detach()
+        loss = 0
+        sim_improvement = 0
+        sim_logs = []
+        count = 0
+        for i in range(n_samples):
+            diff_target = y_hat_feats[i].dot(y_feats[i])
+            diff_input = y_hat_feats[i].dot(x_feats[i])
+            diff_views = y_feats[i].dot(x_feats[i])
+            sim_logs.append({'diff_target': float(diff_target),
+                             'diff_input': float(diff_input),
+                             'diff_views': float(diff_views)})
+            loss += 1 - diff_target
+            sim_diff = float(diff_target) - float(diff_views)
+            sim_improvement += sim_diff
+            count += 1
+
+        return loss / count, sim_improvement / count, sim_logs
