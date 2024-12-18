@@ -4,6 +4,7 @@ from tqdm import tqdm
 import shutil
 
 
+
 class FacePairDatasetPreparer:
     """
     A class to prepare profile and frontal image pairs for identity-preserving face frontalization.
