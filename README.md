@@ -30,7 +30,7 @@ Key aspects of the model training include:
 - Tailored training strategies using paired frontal and profile face images.
 - Loss functions optimized for preserving facial identity features.
 
-The pre-trained weights for the model, `frontalization.pt`, are available for download [here](https://drive.google.com/your_weights_link). The processed training data is also accessible [here](https://drive.google.com/your_training_data_link).
+The pre-trained weights for the model, `frontalization.pt`, are available for download [here](https://drive.google.com/your_weights_link). The processed training data is also accessible [here](https://clemson-my.sharepoint.com/:u:/g/personal/nalipou_clemson_edu/Ec4rubLBddpKoecwLF_q1w8BB-0EdVTEdXvYlbI1k2-mGw?e=VFUg1l).
 
 ---
 
